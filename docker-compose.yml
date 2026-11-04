@@ -1,0 +1,18 @@
+# Tinyauth: Google login wall for public Coolify apps.
+# Deploy as a Coolify "Docker Compose" service. Domain: https://auth.chetan-vps.tech (port 3000).
+# Secrets come from Coolify env vars; never commit them.
+services:
+  tinyauth:
+    image: ghcr.io/tinyauthapp/tinyauth:v5
+    restart: unless-stopped
+    environment:
+      - TINYAUTH_APPURL=https://auth.chetan-vps.tech
+      - TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTID=${GOOGLE_CLIENT_ID}
+      - TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTSECRET=${GOOGLE_CLIENT_SECRET}
+      # Only this Google account gets in.
+      - TINYAUTH_OAUTH_WHITELIST=${ALLOWED_EMAIL}
+      - TINYAUTH_AUTH_TRUSTEDPROXIES=10.0.0.0/8,172.16.0.0/12
+    labels:
+      # Apps opt in with: traefik.http.routers.<router>.middlewares=tinyauth@docker
+      - traefik.http.middlewares.tinyauth.forwardauth.address=http://tinyauth:3000/api/auth/traefik
+      - traefik.http.middlewares.tinyauth.forwardauth.authResponseHeaders=Remote-User,Remote-Email,Remote-Name
