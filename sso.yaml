@@ -1,0 +1,57 @@
+# The live copy is in Coolify. Keep both copies in sync.
+http:
+  middlewares:
+    tinyauth:
+      forwardAuth:
+        address: http://tinyauth-lo120rlfyooszyleguajps7c:3000/api/auth/traefik
+        authResponseHeaders:
+          - Remote-User
+          - Remote-Email
+          - Remote-Name
+    kharcha-proxy:
+      headers:
+        customRequestHeaders:
+          X-Kharcha-Proxy: "<PROXY_SECRET from ~/Storage/secrets/kharcha-proxy.env>"
+  routers:
+    coolify-sso:
+      rule: Host(`coolify.chetan-vps.tech`)
+      entryPoints:
+        - https
+      priority: 40
+      middlewares:
+        - gzip@file
+        - tinyauth
+      service: coolify@file
+      tls:
+        certResolver: letsencrypt
+    coolify-webhooks:
+      rule: Host(`coolify.chetan-vps.tech`) && PathPrefix(`/webhooks/`)
+      entryPoints:
+        - https
+      priority: 1000
+      service: coolify@file
+      tls:
+        certResolver: letsencrypt
+    umami-sso:
+      rule: Host(`umami.chetan-vps.tech`)
+      entryPoints:
+        - https
+      priority: 100
+      middlewares:
+        - tinyauth
+      service: umami-sso
+      tls:
+        certResolver: letsencrypt
+    umami-public:
+      rule: Host(`umami.chetan-vps.tech`) && (Path(`/script.js`) || PathPrefix(`/api/send`))
+      entryPoints:
+        - https
+      priority: 1000
+      service: umami-sso
+      tls:
+        certResolver: letsencrypt
+  services:
+    umami-sso:
+      loadBalancer:
+        servers:
+          - url: http://umami-lp6hjp8fyejuvnv6vzbdvibu:3000

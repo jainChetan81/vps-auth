@@ -1,32 +1,54 @@
 # vps-auth
 
-One Google login for public Coolify apps on `chetan-vps`.
+One Google login for selected public apps on `chetan-vps`. Verified 2026-11-04.
 
-- Tinyauth at `https://auth.chetan-vps.tech`, Google OAuth, allow list of one email.
-- Public apps opt in with the Traefik label `traefik.http.routers.<router>.middlewares=tinyauth@docker`.
-- Tailnet-only services (Vaultwarden, MCPHub, 9Router, T3, Cockpit, Jellyfin, qBittorrent) stay off this wall. Tailscale (Google login) is their login.
-- Machine paths (kharcha ingest on tailnet `:8790`, `/api/jobs/*` timers) never go behind the wall.
+Tinyauth uses Google OAuth only. Its allow list contains the owner's Gmail address.
+The Coolify service is `lo120rlfyooszyleguajps7c` at `https://auth.chetan-vps.tech`.
+Its container is `tinyauth-lo120rlfyooszyleguajps7c`.
+
+## Access
+
+| Service or path | Access |
+|---|---|
+| Kharcha public domain | Tinyauth; password login remains a fallback |
+| Coolify public domain | Tinyauth, then Coolify login; Google login is enabled in Settings > Authentication |
+| Coolify `/webhooks/` | Public; no Tinyauth |
+| Umami dashboard | Tinyauth |
+| Umami `/script.js` and `/api/send` | Public; no Tinyauth |
+| `travel.chetan-vps.tech` | Public by design; share view needs access |
+| Kharcha tailnet `:8790` and machine paths | Unchanged; no Tinyauth |
+| Coolify tailnet `https://vps.bullhead-mine.ts.net:8000` | Bypasses Tinyauth; recovery path |
+| Vaultwarden, MCPHub, 9Router, T3, Cockpit | Tailnet only; no Tinyauth |
+| Mini Jellyfin and qBittorrent | Tailnet only; no Tinyauth |
+
+Tailscale uses the Google account for tailnet access. API clients cannot follow a login redirect.
+
+## Configuration
+
+Shared Traefik rules are in `/data/coolify/proxy/dynamic/sso.yaml`.
+Edit them in Coolify: Servers > localhost > Proxy > Dynamic Configuration.
+Keep [sso.yaml](sso.yaml) in sync. Replace its placeholder with the secret for the live file.
+
+Kharcha app `rzoma7mhudklvintirprqgvk` uses these HTTPS router middlewares:
+`gzip,kharcha-headers@file,tinyauth@file,kharcha-proxy@file`.
+Its Coolify environment sets `PROXY_SECRET` and `ADMIN_EMAIL`.
+Kharcha trusts `Remote-Email` only with a matching `X-Kharcha-Proxy`.
+See `kharcha-web/src/server/auth.ts`.
+
+To protect a new app, add `tinyauth@file` to its HTTPS router middlewares in Coolify custom labels. Redeploy the app.
+Never add Traefik middleware labels to the Tinyauth container. Coolify attached them to its own router, and every page returned 401.
 
 ## Recovery
 
-Tinyauth or Google down: `ssh vps` over Tailscale (or password + TOTP from outside), then `agy` CLI. Remove the middleware label in Coolify, or stop the service.
+If Google or Tinyauth is down, use tailnet Coolify at `https://vps.bullhead-mine.ts.net:8000`.
+Or run `ssh vps`, then `agy`. Delete the live `sso.yaml` or remove the app labels to bypass the wall.
+Deleting `sso.yaml` removes all its shared routers and middlewares. Restore it after recovery.
 
-## Host move
+## Secrets and host move
 
-Tinyauth keeps no state worth copying; its env lives in the Coolify DB. Keep the domain `auth.chetan-vps.tech`: the Google OAuth redirect URI depends on it.
+- Google OAuth: `~/Storage/secrets/vps-auth-google.env`.
+- Kharcha proxy secret: `~/Storage/secrets/kharcha-proxy.env`.
+- Coolify API token `claude-vps-auth`: `~/Storage/secrets/coolify-api.env`; expires 2026-12-04.
+- Coolify API is local only: `http://127.0.0.1:8000/api/v1`.
 
-## Live setup (2026-11-04)
-
-- Coolify service `tinyauth` (uuid `lo120rlfyooszyleguajps7c`, project Apps/production). Container name `tinyauth-lo120rlfyooszyleguajps7c` on network `lo120rlfyooszyleguajps7c`.
-- Env in Coolify: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ALLOWED_EMAIL`. Local copy: `~/Storage/secrets/vps-auth-google.env` (0600).
-- Google OAuth client "vps-auth (Tinyauth + Coolify)" in Cloud project `vps-mcp-513611`. Redirect URIs: `https://auth.chetan-vps.tech/api/oauth/callback/google`, `https://coolify.chetan-vps.tech/auth/google/callback`.
-- Coolify login: Settings > Authentication > Google enabled, same client, auto-join off. Local password login stays as fallback.
-- Do not put Traefik middleware labels on the Tinyauth container itself: Coolify applied them to Tinyauth's own router and every page returned 401. Define the middleware on the protected app instead:
-
-```
-traefik.http.middlewares.tinyauth.forwardauth.address=http://tinyauth-lo120rlfyooszyleguajps7c:3000/api/auth/traefik
-traefik.http.middlewares.tinyauth.forwardauth.authResponseHeaders=Remote-User,Remote-Email,Remote-Name
-traefik.http.routers.https-0-<app-uuid>.middlewares=gzip,tinyauth
-```
-
-- Coolify API: local only (`http://127.0.0.1:8000/api/v1`, allow list is private IPs). Token `claude-vps-auth` (Read, Write, Deploy; expires 2026-12-04) in `~/Storage/secrets/coolify-api.env`.
+Tinyauth environment settings live in the Coolify DB. Keep `auth.chetan-vps.tech` on host moves; the Google OAuth redirect URI depends on it.
