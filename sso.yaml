@@ -43,7 +43,7 @@ http:
       tls:
         certResolver: letsencrypt
     umami-public:
-      rule: Host(`umami.chetan-vps.tech`) && (Path(`/script.js`) || PathPrefix(`/api/send`))
+      rule: Host(`umami.chetan-vps.tech`) && (Path(`/script.js`) || Path(`/api/send`))
       entryPoints:
         - https
       priority: 1000

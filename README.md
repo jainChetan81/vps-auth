@@ -41,8 +41,10 @@ Never add Traefik middleware labels to the Tinyauth container. Coolify attached 
 ## Recovery
 
 If Google or Tinyauth is down, use tailnet Coolify at `https://vps.bullhead-mine.ts.net:8000`.
-Or run `ssh vps`, then `agy`. Delete the live `sso.yaml` or remove the app labels to bypass the wall.
-Deleting `sso.yaml` removes all its shared routers and middlewares. Restore it after recovery.
+Or run `ssh vps`, then `agy`.
+To bypass the wall, remove `tinyauth@file` (and for Kharcha `kharcha-proxy@file`) from the app's router middlewares, then redeploy.
+Do not delete `sso.yaml` first: routers that reference its middlewares stop working until the labels change.
+Coolify API on the public domain is behind the wall; use `http://127.0.0.1:8000/api/v1`.
 
 ## Secrets and host move
 
