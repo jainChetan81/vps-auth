@@ -11,7 +11,7 @@ http:
     kharcha-proxy:
       headers:
         customRequestHeaders:
-          X-Kharcha-Proxy: "<PROXY_SECRET from ~/Storage/secrets/kharcha-proxy.env>"
+          X-Kharcha-Proxy: "<PROXY_SECRET from the credentials file>"
   routers:
     coolify-sso:
       rule: Host(`coolify.chetan-vps.tech`)
