@@ -50,7 +50,43 @@ http:
       service: umami-sso
       tls:
         certResolver: letsencrypt
+    kuma-sso:
+      rule: Host(`kuma.chetan-vps.tech`)
+      entryPoints:
+        - https
+      priority: 100
+      middlewares:
+        - tinyauth
+      service: kuma-sso
+      tls:
+        certResolver: letsencrypt
+    kuma-push:
+      rule: Host(`kuma.chetan-vps.tech`) && PathPrefix(`/api/push/`)
+      entryPoints:
+        - https
+      priority: 1000
+      service: kuma-sso
+      tls:
+        certResolver: letsencrypt
+    home-sso:
+      rule: Host(`home.chetan-vps.tech`)
+      entryPoints:
+        - https
+      priority: 100
+      middlewares:
+        - tinyauth
+      service: home-sso
+      tls:
+        certResolver: letsencrypt
   services:
+    home-sso:
+      loadBalancer:
+        servers:
+          - url: http://homepage-3gle8dmpbv0tqmzv7t5phoub:3000
+    kuma-sso:
+      loadBalancer:
+        servers:
+          - url: http://uptime-kuma-vjwxcqkdosvltkmoz9zerf7x:3001
     umami-sso:
       loadBalancer:
         servers:

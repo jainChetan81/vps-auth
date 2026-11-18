@@ -14,6 +14,10 @@ Its container is `tinyauth-lo120rlfyooszyleguajps7c`.
 | Coolify public domain | Tinyauth, then Coolify login; Google login is enabled in Settings > Authentication |
 | Coolify `/webhooks/` | Public; no Tinyauth |
 | Umami dashboard | Tinyauth |
+| Uptime Kuma `kuma.chetan-vps.tech` | Tinyauth only; Kuma login off since 2026-11-07 |
+| Homepage `home.chetan-vps.tech` | Tinyauth |
+| Kuma `/api/push/` | Public; each URL holds its own push token |
+| ntfy `ntfy.chetan-vps.tech` | Public; ntfy login, deny-all default (agent vault `ntfy`) |
 | Umami `/script.js` and `/api/send` | Public; no Tinyauth |
 | `travel.chetan-vps.tech` | Public by design; share view needs access |
 | Kharcha tailnet `:8790` and machine paths | Unchanged; no Tinyauth |
